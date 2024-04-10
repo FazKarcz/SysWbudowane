@@ -55,6 +55,14 @@ void LCD_sendData(unsigned char data){
     __delay_us(50);
     LCD_E = 0;
 }
+
+void LCD_print(unsigned char* string){
+    while(*string){
+        LCD_sendData(*string++);
+    }
+    
+}
+
 void LCD_init(){
     __delay_ms(20);
     LCD_sendCommand(LCD_CONFIG);
@@ -65,14 +73,16 @@ void LCD_init(){
     __delay_ms(2);
 }
 
+
+
 int main(void) {
     TRISB = 0x7FFF;
     TRISD = 0x0000; 
     TRISE = 0x0000; 
     
     LCD_init();
-    LCD_sendData("Hello world!!");
-    
+    LCD_print("Siemson");
     
     return 0;
 }
+
