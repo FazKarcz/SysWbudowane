@@ -1,0 +1,172 @@
+// CONFIG2
+#pragma config POSCMOD = NONE             // Primary Oscillator Select (primary oscillator disabled)
+#pragma config OSCIOFNC = OFF           // Primary Oscillator Output Function (OSC2/CLKO/RC15 functions as CLKO (FOSC/2))
+#pragma config FCKSM = CSDCMD           // Clock Switching and Monitor (Clock switching and Fail-Safe Clock Monitor are disabled)
+#pragma config FNOSC = FRC              // Oscillator Select (Fast RC Oscillator without Postscaler)
+#pragma config IESO = OFF               // Internal External Switch Over Mode (IESO mode (Two-Speed Start-up) disabled)
+// CONFIG1
+#pragma config WDTPS = PS32768 // Watchdog Timer Postscaler (1:32,768)
+#pragma config FWPSA = PR128 // WDT Prescaler (1:128)
+#pragma config WINDIS = ON // Watchdog Timer Window Mode disabled
+#pragma config FWDTEN = OFF // Watchdog Timer disabled
+#pragma config ICS = PGx2 // Emulator/debugger uses EMUC2/EMUD2
+#pragma config GWRP = OFF // Writes to program memory allowed
+#pragma config GCP = OFF // Code protection is disabled
+#pragma config JTAGEN = OFF // JTAG port is disabled
+
+#include "xc.h"
+#include <libpic30.h>
+#include <stdio.h>
+
+#define FCY 4000000UL
+#define LCD_E       LATDbits.LATD4
+#define LCD_RW      LATDbits.LATD5
+#define LCD_RS      LATBbits.LATB15
+#define LCD_DATA    LATE
+
+#define LCD_CLEAR   0x01
+#define LCD_HOME    0x02
+#define LCD_ON      0x0C
+#define LCD_OFF     0x08
+#define LCD_CONFIG  0x38
+#define LCD_CURSOR  0x80
+#define LINE1       0x00
+#define LINE2       0x40
+
+void __delay_us(unsigned long us){
+    __delay32(us*FCY/1000000);
+}
+
+void __delay_ms(unsigned long ms){
+    __delay32(ms*FCY/1000);
+}
+
+void LCD_sendCommand(unsigned char command){
+    LCD_RW = 0;
+    LCD_RS = 0;
+    LCD_E = 1;
+    LCD_DATA = command;
+    __delay_us(60);
+    LCD_E = 0;
+}
+
+void LCD_sendData(unsigned char data){
+    LCD_RW = 0;
+    LCD_RS = 1;
+    LCD_E = 1;
+    LCD_DATA = data;
+    __delay_us(60);
+    LCD_E = 0;
+}
+
+void LCD_setCursor(unsigned char row, unsigned char col){
+    unsigned char address;
+    if(row==1){
+        address = LCD_CURSOR + LINE1 + col;
+    }
+    if(row==2){
+        address = LCD_CURSOR + LINE2 + col;
+    }
+    LCD_sendCommand(address);
+}
+
+void LCD_print(char* string) {
+    while(*string){
+        LCD_sendData(*string++);
+    }
+}
+
+void LCD_init(){
+    __delay_us(20);
+    LCD_sendCommand(LCD_CONFIG);
+    __delay_us(50);
+    LCD_sendCommand(LCD_ON);
+    __delay_us(50);
+    LCD_sendCommand(LCD_CLEAR);
+    __delay_ms(2);
+}
+
+char button1 = 0, button2 = 0;
+
+void check_buttons(int *state){
+    TRISD = 0xFFFF;
+    __delay_ms(10);
+
+    button1 = PORTDbits.RD6;
+    __delay_ms(10);
+    button2 = PORTDbits.RD7;
+    __delay32(150000);
+
+    if (button1 == 0){
+        if (*state == 0) {
+            *state = 1;
+        } else {
+            *state = 0;
+        }
+    }
+    __delay_ms(10);
+    if (button2 == 0){
+        if (*state == 1) {
+            *state = 2;
+        } else {
+            *state = 0;
+        }
+    }
+    __delay_ms(10);
+    TRISD = 0x0000;
+}
+
+int main(void) {
+    TRISB = 0x7FFF;
+    TRISD = 0x0000;
+    TRISE = 0x0000;
+
+    int state = 0; // 0: idle, 1: player 1 turn, 2: player 2 turn
+    int player1_time = 300; // 5 minutes
+    int player2_time = 300; // 5 minutes
+    char text[16];
+
+    LCD_init();
+
+    while (1) {
+        check_buttons(&state);
+
+        // Player 1 turn
+        if (state == 1 && player1_time > 0) {
+            player1_time--;
+            sprintf(text, "Player1: %02d:%02d", player1_time / 60, player1_time % 60);
+            LCD_sendCommand(LCD_CLEAR);
+            LCD_setCursor(1, 0);
+            LCD_print(text);
+            __delay_ms(1000);
+        }
+                // Check if player 1 ran out of time
+        if (player1_time <= 0) {
+            LCD_sendCommand(LCD_CLEAR);
+            LCD_setCursor(1, 0);
+            LCD_print("Player 1 Time Out");
+            break;
+        }
+
+        state = 0;
+        // Player 2 turn
+        if (state == 2 && player2_time > 0) {
+            player2_time--;
+            sprintf(text, "Player 2: %02d:%02d", player2_time / 60, player2_time % 60);
+            LCD_sendCommand(LCD_CLEAR);
+            LCD_setCursor(2, 0);
+            LCD_print(text);
+            __delay_ms(1000);
+
+            // Check if player 2 ran out of time
+        if (player2_time <= 0) {
+            LCD_sendCommand(LCD_CLEAR);
+            LCD_setCursor(1, 0);
+            LCD_print("Player 2 Time Out");
+            break;
+        }
+            state = 0;
+        }
+    }
+    return 0;
+}
