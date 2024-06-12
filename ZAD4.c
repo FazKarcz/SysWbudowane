@@ -104,100 +104,100 @@ int append(int i, int n){
 }
 
 int main(void) {
-    unsigned portValue = 0x0001;
-    char current6 = 0, prev6 = 0, current7 = 0, prev7 = 0, micPower = 0, current8 = 0, prev8 = 0, current9 = 0, prev9 = 0; 
-    int i = 0, start = 0, mins = 0, secs = 0, micTimer = 0;
-    char minsTxt[5], secsTxt[5];
-    int showMessage = 0;  // Flag to indicate if the message should be displayed
+    unsigned portValue = 0x0001;  // Zmienna przechowująca wartość portu
+    char current6 = 0, prev6 = 0, current7 = 0, prev7 = 0, micPower = 0, current8 = 0, prev8 = 0, current9 = 0, prev9 = 0;  // Zmienne do obsługi przycisków i mocy mikrofonu
+    int i = 0, start = 0, mins = 0, secs = 0, micTimer = 0;  // Zmienne czasowe, flaga startu, oraz licznik czasu nagrywania mikrofonu
+    char minsTxt[5], secsTxt[5];  // Bufory na tekst dla minut i sekund
+    int showMessage = 0;  // Flaga wskazująca, czy ma być wyświetlana wiadomość
     
-    TRISB = 0x7FFF;   
-    TRISE = 0x0000;
-    TRISA = 0x0080;   
-    TRISD = 0xFFE7;   
+    TRISB = 0x7FFF;   // Konfiguracja portu B
+    TRISE = 0x0000;   // Konfiguracja portu E
+    TRISA = 0x0080;   // Konfiguracja portu A
+    TRISD = 0xFFE7;   // Konfiguracja portu D
     
-    LCD_init();                     
-    LCD_setCursor(1, 0);             
-    __delay_ms(500);
+    LCD_init();                      // Inicjalizacja wyświetlacza
+    LCD_setCursor(1, 0);            // Ustawienie kursora na pierwszym wierszu
+    __delay_ms(500);                // Opóźnienie
     
     while(1){
-        mins = (micTimer - (micTimer % 60)) / 60;
-        secs = micTimer % 60;
+        mins = (micTimer - (micTimer % 60)) / 60;  // Obliczenie minut
+        secs = micTimer % 60;  // Obliczenie sekund
         
-        sprintf(minsTxt, "%d", mins);
-        sprintf(secsTxt, "%d", secs);
-
-        LCD_setCursor(1, 8);
-        if (mins < 10) LCD_print("0");
-        LCD_print((unsigned char*)minsTxt);
-        LCD_print(":");
-        if (secs < 10) LCD_print("0");
-        LCD_print((unsigned char*)secsTxt);
-        sprintf(secsTxt, "%u", micTimer);
+        sprintf(minsTxt, "%d", mins);  // Konwersja minut na tekst
+        sprintf(secsTxt, "%d", secs);  // Konwersja sekund na tekst
         
-        prev6 = PORTDbits.RD6;     
-        prev7 = PORTDbits.RD7;
-        prev8 = PORTAbits.RA7;
-        prev9 = PORTDbits.RD13;
+        LCD_setCursor(1, 8);  // Ustawienie kursora na pierwszym wierszu
+        if (mins < 10) LCD_print("0");  // Jeśli minuty są mniejsze od 10, wyświetl "0"
+        LCD_print((unsigned char*)minsTxt);  // Wyświetlenie minut
+        LCD_print(":");  // Wyświetlenie dwukropka
+        if (secs < 10) LCD_print("0");  // Jeśli sekundy są mniejsze od 10, wyświetl "0"
+        LCD_print((unsigned char*)secsTxt);  // Wyświetlenie sekund
+        sprintf(secsTxt, "%u", micTimer);  // Konwersja sekund na tekst
         
-        __delay32(150000);
-        current6 = PORTDbits.RD6;
-        current7 = PORTDbits.RD7;
-        current8 = PORTAbits.RA7;
-        current9 = PORTDbits.RD13;
+        prev6 = PORTDbits.RD6;      // Zapamiętanie poprzedniego stanu przycisku RD6
+        prev7 = PORTDbits.RD7;      // Zapamiętanie poprzedniego stanu przycisku RD7
+        prev8 = PORTAbits.RA7;      // Zapamiętanie poprzedniego stanu przycisku RA7
+        prev9 = PORTDbits.RD13;     // Zapamiętanie poprzedniego stanu przycisku RD13
         
-        if (start == 1){
-            if (current9 - prev9 == 1) start = 0;
-            if (micTimer == 0) {
-                start = 0;
-                showMessage = 1;
-                micPower = 0;  // Reset micPower to 0
+        __delay32(150000);  // Opóźnienie
+        current6 = PORTDbits.RD6;  // Odczyt aktualnego stanu przycisku RD6
+        current7 = PORTDbits.RD7;  // Odczyt aktualnego stanu przycisku RD7
+        current8 = PORTAbits.RA7;  // Odczyt aktualnego stanu przycisku RA7
+        current9 = PORTDbits.RD13;  // Odczyt aktualnego stanu przycisku RD13
+        
+        if (start == 1){  // Jeśli nagrywanie jest włączone
+            if (current9 - prev9 == 1) start = 0;  // Jeśli przycisk RD13 został wciśnięty, wyłącz nagrywanie
+            if (micTimer == 0) {  // Jeśli licznik czasu nagrywania wynosi 0
+                start = 0;  // Wyłącz nagrywanie
+                showMessage = 1;  // Ustaw flagę, aby wyświetlić wiadomość
+                micPower = 0;  // Zresetuj moc mikrofonu
             } else {
-                micTimer--;
-                __delay_ms(1000);
+                micTimer--;  // Zmniejsz licznik czasu o 1 sekundę
+                __delay_ms(1000);  // Opóźnienie 1 sekunda
             }
         }
         
-        if (showMessage == 1) {
-            LCD_setCursor(2, 0);
-            LCD_print((unsigned char*)"Koniec");
-            __delay_ms(2000);  // Display the message for 2 seconds
-            LCD_sendCommand(LCD_CLEAR);
-            showMessage = 0;
+        if (showMessage == 1) {  // Jeśli flaga showMessage jest ustawiona na 1
+            LCD_setCursor(2, 0);  // Ustaw kursor na drugim wierszu
+            LCD_print((unsigned char*)"Koniec");  // Wyświetl komunikat "Koniec"
+            __delay_ms(2000);  // Wyświetl komunikat przez 2 sekundy
+            LCD_sendCommand(LCD_CLEAR);  // Wyczyść ekran
+            showMessage = 0;  // Zresetuj flagę showMessage
         }
         
-        if (current8 - prev8 == 1) {
-            micTimer = 0;
+        if (current8 - prev8 == 1) {  // Jeśli przycisk RA7 został wciśnięty
+            micTimer = 0;  // Zresetuj licznik czasu nagrywania mikrofonu
         }
         
-        if (current9 - prev9 == 1) {
-            start = append(start, 2);
+        if (current9 - prev9 == 1) {  // Jeśli przycisk RD13 został wciśnięty
+            start = append(start, 2);  // Rozpocznij/Przerwij nagrywanie
         }     
         
-        if (current7 - prev7 == 1) {
-            micTimer += 30;
+        if (current7 - prev7 == 1) {  // Jeśli przycisk RD7 został wciśnięty
+            micTimer += 30;  // Dodaj 30 sekund do licznika czasu nagrywania mikrofonu
         }  
         
-        if (current6 - prev6 == 1) {
-            micPower = append(micPower, 5);
+        if (current6 - prev6 == 1) {  // Jeśli przycisk RD6 został wciśnięty
+            micPower = append(micPower, 5);  // Zmodyfikuj moc mikrofonu
         }
         
-        if (micPower == 0) {
-            LCD_setCursor(1, 0);
-            LCD_print("0%  ");
-        } else if(micPower == 1) {
-            LCD_setCursor(1, 0);
-            LCD_print("25% ");
-        } else if(micPower == 2) {
-            LCD_setCursor(1, 0);
-            LCD_print("50% ");
-        } else if(micPower == 3) {
-            LCD_setCursor(1, 0);
-            LCD_print("75% ");
-        } else if(micPower == 4) {
-            LCD_setCursor(1, 0);
-            LCD_print("100%");
+        if (micPower == 0) {  // Jeśli moc mikrofonu wynosi 0
+            LCD_setCursor(1, 0);  // Ustaw kursor na pierwszym wierszu
+            LCD_print("0%  ");  // Wyświetl "0%"
+        } else if(micPower == 1) {  // Jeśli moc mikrofonu wynosi 1
+            LCD_setCursor(1, 0);  // Ustaw kursor na pierwszym wierszu
+            LCD_print("25% ");  // Wyświetl "25%"
+        } else if(micPower == 2) {  // Jeśli moc mikrofonu wynosi 2
+            LCD_setCursor(1, 0);  // Ustaw kursor na pierwszym wierszu
+            LCD_print("50% ");  // Wyświetl "50%"
+        } else if(micPower == 3) {  // Jeśli moc mikrofonu wynosi 3
+            LCD_setCursor(1, 0);  // Ustaw kursor na pierwszym wierszu
+            LCD_print("75% ");  // Wyświetl "75%"
+        } else if(micPower == 4) {  // Jeśli moc mikrofonu wynosi 4
+            LCD_setCursor(1, 0);  // Ustaw kursor na pierwszym wierszu
+            LCD_print("100%");  // Wyświetl "100%"
         }
     }
 
-    return 0;
+    return 0;  // Zakończenie programu
 }
