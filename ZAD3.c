@@ -69,20 +69,20 @@ void LCD_sendData(char data){
 }
 
 void LCD_print(unsigned char* string){
-    while(*string){
-        LCD_sendData(*string++);
+    while(*string){  // Pętla wykonywana, dopóki nie napotka znaku końca ciągu znaków
+        LCD_sendData(*string++);  // Wysłanie kolejnych znaków do wyświetlacza
     }
 }
 
 void LCD_setCursor(unsigned char row, unsigned char col){
     unsigned char address;
-    if(row==1){
-        address = LCD_CURSOR + LINE1 + col;
+    if(row==1){  // Jeśli wybrany jest pierwszy wiersz
+        address = LCD_CURSOR + LINE1 + col;  // Adresowanie pierwszego wiersza
     }
-    if(row==2){
-        address = LCD_CURSOR + LINE2 + col;
+    if(row==2){  // Jeśli wybrany jest drugi wiersz
+        address = LCD_CURSOR + LINE2 + col;  // Adresowanie drugiego wiersza
     }
-    LCD_sendCommand(address);
+    LCD_sendCommand(address);  // Wysłanie komendy ustawienia kursora
 }
 
 void LCD_saveCustChar(unsigned char slot, unsigned char *array) {
@@ -104,24 +104,24 @@ void LCD_init(){
 }
 
 void LCD_scrollText(unsigned char* string) {
-    int len = strlen(string);
+    int len = strlen(string);  // Obliczenie długości tekstu
     int i, j;
 
-    for (i = 0; i < len + LCD_WIDTH; i++) {
-        LCD_sendCommand(LCD_CLEAR);
+    for (i = 0; i < len + LCD_WIDTH; i++) {  // Pętla przesuwająca tekst
+        LCD_sendCommand(LCD_CLEAR);  // Wysłanie komendy czyszczenia ekranu
         for (j = 0; j < LCD_WIDTH; j++) {
             if (i + j < len) {
-                LCD_sendData(string[i + j]);
+                LCD_sendData(string[i + j]);  // Wysłanie kolejnych znaków do wyświetlacza
             } else {
-                LCD_sendData(string[(i + j) % len]);
+                LCD_sendData(string[(i + j) % len]);  // Wysłanie znaków cyklicznie
             }
         }
-        __delay_ms(400);
+        __delay_ms(400);  // Oczekiwanie na zakończenie operacji
     }
-    LCD_setCursor(2, 0);
+    LCD_setCursor(2, 0);  // Ustawienie kursora na drugim wierszu
 }
 
-unsigned char symbol1[8] = {
+unsigned char symbol1[8] = { //Deklaracja tablicy znaku niestandardowego
     0b00000,
     0b01010,
     0b10101,
@@ -136,15 +136,15 @@ int main(void) {
     TRISB = 0x7FFF;
     TRISD = 0x0000;
     TRISE = 0x0000;
-    LCD_init();
+    LCD_init();      // Inicjalizacja wyświetlacza
  
-    LCD_setCursor(1,0);
-    LCD_sendData(0);
-    LCD_scrollText("Tylko dzis PIWO marki BROWAR za 5.55zl !! ");
-    LCD_setCursor(2,0);
-    LCD_sendData(0);
-    LCD_scrollText("Tylko dzis PIWO marki BROWAR za 5.55zl !! ");
-    __delay_ms(10);
+    LCD_setCursor(1,0);  // Ustawienie kursora na pierwszym wierszu
+    LCD_sendData(0);     // Wysłanie znaku niestandardowego
+    LCD_scrollText("Tylko dzis PIWO marki BROWAR za 5.55zl !! ");  // Przewijanie tekstu
+    LCD_setCursor(2,0);  // Ustawienie kursora na drugim wierszu
+    LCD_sendData(0);     // Wysłanie znaku niestandardowego
+    LCD_scrollText("Tylko dzis PIWO marki BROWAR za 5.55zl !! ");  // Przewijanie tekstu
+    __delay_ms(10);  // Oczekiwanie na zakończenie operacji
    
     return 0;
 }
